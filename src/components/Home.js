@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from './ui/button';
+import rinexisLogo from '../images/rinexis-logo.png';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -11,15 +13,24 @@ const Home = () => {
     { title: 'Recommendations', path: '/recommendations', color: 'bg-[#7B9CC2]' }
   ];
 
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    navigate('/login');
+  };
+
   return (
-    <div className="min-h-screen bg-[#C2C8CC] p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#C2C8CC]">
+      <nav className="bg-white shadow-sm p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <img src={rinexisLogo} alt="Rinexis Logo" className="h-12" />
+          <Button onClick={handleLogout} variant="outline">
+            Logout
+          </Button>
+        </div>
+      </nav>
+
+      <div className="max-w-4xl mx-auto p-8">
         <div className="text-center mb-8">
-          <img 
-            src="/rinexis-logo.png" 
-            alt="Rinexis Logo" 
-            className="mx-auto w-48 h-48 mb-4"
-          />
           <h1 className="text-4xl font-bold text-[#1B365D] mb-2">Rinexis</h1>
           <p className="text-xl text-[#3B5998] italic">
             Re-invent, Innovate and Explore
@@ -32,8 +43,8 @@ const Home = () => {
               key={button.path}
               onClick={() => navigate(button.path)}
               className={`${button.color} hover:opacity-90 text-white p-8 rounded-lg shadow-lg 
-                         transition-transform transform hover:scale-105
-                         border-2 border-white`}
+                        transition-transform transform hover:scale-105
+                        border-2 border-white`}
             >
               <h2 className="text-xl font-semibold">{button.title}</h2>
             </button>
