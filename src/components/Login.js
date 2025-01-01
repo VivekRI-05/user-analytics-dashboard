@@ -5,22 +5,69 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import rinexisLogo from '../images/rinexis-logo.png';
 
+const API_URL = 'http://localhost:3001';
+
 const Login = () => {
   const [credentials, setCredentials] = useState({ userId: '', password: '' });
   const [error, setError] = useState('');
   const [showTextLogo, setShowTextLogo] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login attempt...'); // Debug log
     
     if (credentials.userId === 'Admin' && credentials.password === 'Admin') {
-      console.log('Login successful, navigating to home...'); // Debug log
       localStorage.setItem('isAuthenticated', 'true');
-      navigate('/home');
-    } else {
-      setError('Invalid credentials. Please use Admin/Admin');
+      localStorage.setItem('userId', credentials.userId);
+      localStorage.setItem('userRole', 'admin');
+      localStorage.setItem('userPermissions', JSON.stringify({
+        audit: {
+          enabled: true,
+          userAnalysis: true,
+          roleAnalysis: true,
+          combinedAnalysis: true,
+          recommendations: true
+        },
+        userAccessReview: true,
+        sorReview: true,
+        superUserAccess: true,
+        dashboard: true
+      }));
+      navigate('/dashboard');
+      return;
+    }
+
+    try {
+      console.log('Attempting to log in with:', credentials.userId);
+      const response = await fetch(`${API_URL}/users`);
+      const users = await response.json();
+      console.log('Found users:', users);
+      
+      const user = users.find(u => 
+        u.username === credentials.userId && 
+        u.password === credentials.password
+      );
+      
+      if (user) {
+        console.log('User found:', user);
+        console.log('Setting permissions:', user.permissions);
+        
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userId', user.username);
+        localStorage.setItem('userRole', 'user');
+        localStorage.setItem('userPermissions', JSON.stringify(user.permissions));
+        
+        // Verify the permissions were set correctly
+        console.log('Stored permissions:', localStorage.getItem('userPermissions'));
+        
+        navigate('/dashboard');
+      } else {
+        console.log('No matching user found');
+        setError('Invalid credentials. Please try again.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An error occurred during login. Please try again.');
     }
   };
 
@@ -41,7 +88,7 @@ const Login = () => {
             />
           )}
           <CardTitle className="text-2xl font-bold text-center">
-            Role Analytics Login
+            Login
           </CardTitle>
         </CardHeader>
         <CardContent>

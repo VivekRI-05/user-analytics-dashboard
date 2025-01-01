@@ -1,0 +1,46 @@
+{
+  "users": [
+    {
+      "id": "1735735705404",
+      "username": "Demo01",
+      "password": "Killer@1",
+      "permissions": {
+        "audit": {
+          "enabled": true,
+          "userAnalysis": true,
+          "roleAnalysis": false,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "sorReview": false,
+        "superUserAccess": false,
+        "dashboard": false
+      },
+      "createdAt": "2025-01-01T12:48:25.404Z",
+      "hasUnsavedChanges": false,
+      "lastSaved": "2025-01-01T12:54:36.327Z"
+    },
+    {
+      "id": "1735735743746",
+      "username": "Demo02",
+      "password": "Killer@1",
+      "permissions": {
+        "audit": {
+          "enabled": true,
+          "userAnalysis": true,
+          "roleAnalysis": true,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "sorReview": false,
+        "superUserAccess": false,
+        "dashboard": false
+      },
+      "createdAt": "2025-01-01T12:49:03.746Z",
+      "hasUnsavedChanges": false,
+      "lastSaved": "2025-01-01T13:04:02.374Z"
+    }
+  ]
+}
