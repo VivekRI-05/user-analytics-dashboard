@@ -39,6 +39,7 @@ const Layout = ({ children }) => {
   };
 
   const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', path: '/dashboard' },
     {
       id: 'audit',
       label: 'Audit',
@@ -52,7 +53,6 @@ const Layout = ({ children }) => {
     { id: 'user-access', label: 'User Access Review', path: '/user-access-review' },
     { id: 'sor', label: 'SOR Review', path: '/sor-review' },
     { id: 'super-user', label: 'Super User Access', path: '/super-user-access' },
-    { id: 'dashboard', label: 'Dashboard', path: '/dashboard' },
     {
       id: 'admin',
       label: 'Administration',
@@ -88,8 +88,15 @@ const Layout = ({ children }) => {
     <div className="min-h-screen w-full flex bg-gray-50">
       {/* Sidebar */}
       <div className="w-64 min-h-screen bg-[#1B365D] text-white flex-shrink-0">
-        <div className="p-4 border-b border-gray-700">
-          <img src={rinexisLogo} alt="Rinexis Logo" className="h-8 w-auto" />
+        <div 
+          className="p-4 border-b border-gray-700 cursor-pointer" 
+          onClick={() => navigate('/dashboard')}
+        >
+          <img 
+            src={rinexisLogo} 
+            alt="Rinexis Logo" 
+            className="h-8 w-auto hover:opacity-80 transition-opacity" 
+          />
         </div>
         <nav className="mt-4">
           {filteredMenuItems.map(item => {

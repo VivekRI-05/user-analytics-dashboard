@@ -1,9 +1,29 @@
 {
   "users": [
     {
-      "id": "1735735705404",
-      "username": "Demo01",
+      "username": "Demo1",
       "password": "Killer@1",
+      "permissions": {
+        "audit": {
+          "enabled": true,
+          "userAnalysis": true,
+          "roleAnalysis": false,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "sorReview": false,
+        "superUserAccess": false,
+        "dashboard": true
+      },
+      "id": 1735739844077,
+      "createdAt": "2025-01-01T13:57:24.077Z",
+      "hasUnsavedChanges": false,
+      "lastSaved": "2025-01-04T08:55:27.161Z"
+    },
+    {
+      "username": "Demo2",
+      "password": "Killer@2",
       "permissions": {
         "audit": {
           "enabled": true,
@@ -17,30 +37,31 @@
         "superUserAccess": false,
         "dashboard": false
       },
-      "createdAt": "2025-01-01T12:48:25.404Z",
+      "id": 1735739870942,
+      "createdAt": "2025-01-01T13:57:50.942Z",
       "hasUnsavedChanges": false,
-      "lastSaved": "2025-01-01T12:54:36.327Z"
+      "lastSaved": "2025-01-01T14:07:10.524Z"
     },
     {
-      "id": "1735735743746",
-      "username": "Demo02",
+      "username": "Mani",
       "password": "Killer@1",
       "permissions": {
         "audit": {
           "enabled": true,
           "userAnalysis": true,
           "roleAnalysis": true,
-          "combinedAnalysis": false,
+          "combinedAnalysis": true,
           "recommendations": false
         },
         "userAccessReview": false,
         "sorReview": false,
         "superUserAccess": false,
-        "dashboard": false
+        "dashboard": true
       },
-      "createdAt": "2025-01-01T12:49:03.746Z",
+      "id": 1736002019165,
+      "createdAt": "2025-01-04T14:46:59.165Z",
       "hasUnsavedChanges": false,
-      "lastSaved": "2025-01-01T13:04:02.374Z"
+      "lastSaved": "2025-01-04T14:47:11.285Z"
     }
   ]
 }

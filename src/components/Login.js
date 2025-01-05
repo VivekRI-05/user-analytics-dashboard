@@ -16,9 +16,10 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (credentials.userId === 'Admin' && credentials.password === 'Admin') {
+    // Admin login check - case insensitive
+    if (credentials.userId.toLowerCase() === 'admin' && credentials.password === 'Admin') {
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userId', credentials.userId);
+      localStorage.setItem('userId', 'Admin'); // Keep original casing for display
       localStorage.setItem('userRole', 'admin');
       localStorage.setItem('userPermissions', JSON.stringify({
         audit: {
@@ -43,8 +44,9 @@ const Login = () => {
       const users = await response.json();
       console.log('Found users:', users);
       
+      // Case insensitive user search
       const user = users.find(u => 
-        u.username === credentials.userId && 
+        u.username.toLowerCase() === credentials.userId.toLowerCase() && 
         u.password === credentials.password
       );
       
@@ -53,11 +55,10 @@ const Login = () => {
         console.log('Setting permissions:', user.permissions);
         
         localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userId', user.username);
+        localStorage.setItem('userId', user.username); // Keep original casing for display
         localStorage.setItem('userRole', 'user');
         localStorage.setItem('userPermissions', JSON.stringify(user.permissions));
         
-        // Verify the permissions were set correctly
         console.log('Stored permissions:', localStorage.getItem('userPermissions'));
         
         navigate('/dashboard');
@@ -110,7 +111,6 @@ const Login = () => {
                 onChange={(e) =>
                   setCredentials({ ...credentials, userId: e.target.value })
                 }
-                placeholder="Enter Admin as User ID"
               />
             </div>
 
@@ -125,7 +125,6 @@ const Login = () => {
                 onChange={(e) =>
                   setCredentials({ ...credentials, password: e.target.value })
                 }
-                placeholder="Enter Admin as password"
               />
             </div>
 

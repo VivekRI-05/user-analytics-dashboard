@@ -57,7 +57,8 @@ const AdminConsole = () => {
       return;
     }
 
-    if (users.some(user => user.username === newUser.username)) {
+    // Case insensitive username check
+    if (users.some(user => user.username.toLowerCase() === newUser.username.toLowerCase())) {
       alert('Username already exists');
       return;
     }
@@ -202,10 +203,21 @@ const AdminConsole = () => {
 
   const handleUpdateUser = async (userId) => {
     try {
+      // Check for duplicate username (excluding current user)
+      const isDuplicate = users.some(user => 
+        user.id !== userId && 
+        user.username.toLowerCase() === editForm.username.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        alert('Username already exists');
+        return;
+      }
+
       const updatedUserData = {
         ...editingUser,
         username: editForm.username,
-        ...(editForm.password && { password: editForm.password }), // Only include password if it was changed
+        ...(editForm.password && { password: editForm.password }),
         lastSaved: new Date().toISOString()
       };
 
