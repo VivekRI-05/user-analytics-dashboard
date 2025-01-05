@@ -16,27 +16,22 @@ const RoleAnalytics = ({ dataset }) => {
 
   const analyzeRoles = (csvContent) => {
     try {
+      console.log('Input CSV Content:', csvContent);
       const rows = csvContent.split('\n').slice(1);
       const analysis = {
         roleRisks: {},
-        riskCounts: {
-          low: 0,
-          medium: 0,
-          high: 0,
-          critical: 0
-        },
+        riskCounts: { low: 0, medium: 0, high: 0, critical: 0 },
         businessProcessRisks: {},
         topRiskyRoles: [],
         totalRoles: 0,
         atRiskRoles: 0
       };
 
-      // Process each role
       rows.forEach(row => {
         if (!row.trim()) return;
         
-        const [role, functionIds] = row.split(',').map(field => field.trim());
-        const functions = functionIds.split(';');
+        const [role, inputAction] = row.split(',').map(field => field.trim());
+        console.log('Processing Role:', role, 'Action:', inputAction);
         
         analysis.totalRoles++;
         const roleAnalysis = {
@@ -47,82 +42,59 @@ const RoleAnalytics = ({ dataset }) => {
           conflictingActions: []
         };
 
-        // Analyze functions and their associated risks
-        functions.forEach(funcId => {
-          Object.entries(dataset).forEach(([riskId, riskData]) => {
-            if (riskData.functions[funcId]) {
-              const func = riskData.functions[funcId];
-              
-              // Track function and risk details
-              roleAnalysis.functions.push({
-                id: funcId,
-                ...func,
-                riskId,
-                riskLevel: riskData.riskLevel
-              });
+        // Dataset columns: [RiskID, Description, RiskLevel, RiskType, FunctionID, FunctionDescription, BusinessProcess, Action]
+        Object.entries(dataset).forEach(([_, riskData]) => {
+          // Check if action matches
+          if (riskData.Action === inputAction) {
+            console.log('Match found:', {
+              role,
+              inputAction,
+              riskId: riskData.RiskID,
+              functionId: riskData.FunctionID,
+              riskLevel: riskData.RiskLevel,
+              businessProcess: riskData.BusinessProcess
+            });
 
-              roleAnalysis.risks.push({
-                id: riskId,
-                description: riskData.description,
-                riskLevel: riskData.riskLevel,
-                riskType: riskData.riskType
-              });
+            roleAnalysis.functions.push({
+              id: riskData.FunctionID,
+              description: riskData.FunctionDescription,
+              businessProcess: riskData.BusinessProcess,
+              action: riskData.Action
+            });
 
-              roleAnalysis.businessProcesses.add(func.businessProcess);
+            roleAnalysis.risks.push({
+              id: riskData.RiskID,
+              description: riskData.Description,
+              riskLevel: riskData.RiskLevel,
+              riskType: riskData.RiskType
+            });
 
-              // Check for conflicting actions within the same business process
-              functions.forEach(otherFuncId => {
-                if (funcId !== otherFuncId && riskData.functions[otherFuncId]) {
-                  const otherFunc = riskData.functions[otherFuncId];
-                  if (
-                    func.businessProcess === otherFunc.businessProcess &&
-                    func.action === otherFunc.action
-                  ) {
-                    roleAnalysis.conflictingActions.push({
-                      process: func.businessProcess,
-                      action: func.action,
-                      functions: [funcId, otherFuncId]
-                    });
-                  }
-                }
-              });
-            }
-          });
+            roleAnalysis.businessProcesses.add(riskData.BusinessProcess);
+
+            // Update risk counts
+            analysis.riskCounts[riskData.RiskLevel.toLowerCase()]++;
+          }
         });
 
-        // Calculate role risk score
+        // Calculate risk score after all matches are found
         roleAnalysis.riskScore = calculateRiskScore(roleAnalysis.risks);
-        
-        // Determine overall role risk level
-        const riskLevel = 
-          roleAnalysis.riskScore >= 10 ? 'critical' :
-          roleAnalysis.riskScore >= 7 ? 'high' :
-          roleAnalysis.riskScore >= 4 ? 'medium' : 'low';
 
-        // Update risk counts
-        analysis.riskCounts[riskLevel]++;
-        
-        // Track at-risk roles (medium or higher)
-        if (riskLevel !== 'low') {
+        if (roleAnalysis.risks.length > 0) {
           analysis.atRiskRoles++;
         }
 
-        // Update business process risks
-        roleAnalysis.businessProcesses.forEach(process => {
-          if (!analysis.businessProcessRisks[process]) {
-            analysis.businessProcessRisks[process] = {
-              total: 0,
-              byRiskLevel: { low: 0, medium: 0, high: 0, critical: 0 }
-            };
-          }
-          analysis.businessProcessRisks[process].total++;
-          analysis.businessProcessRisks[process].byRiskLevel[riskLevel]++;
+        console.log('Role Analysis Result:', {
+          role,
+          riskScore: roleAnalysis.riskScore,
+          risksFound: roleAnalysis.risks.length,
+          businessProcesses: Array.from(roleAnalysis.businessProcesses),
+          functions: roleAnalysis.functions.length
         });
 
         analysis.roleRisks[role] = roleAnalysis;
       });
 
-      // Calculate top 10 risky roles
+      // Sort and set top risky roles
       analysis.topRiskyRoles = Object.entries(analysis.roleRisks)
         .map(([role, data]) => ({
           role,
@@ -133,9 +105,17 @@ const RoleAnalytics = ({ dataset }) => {
         .sort((a, b) => b.riskScore - a.riskScore)
         .slice(0, 10);
 
+      console.log('Final Analysis:', {
+        totalRoles: analysis.totalRoles,
+        atRiskRoles: analysis.atRiskRoles,
+        riskCounts: analysis.riskCounts,
+        topRiskyRoles: analysis.topRiskyRoles.slice(0, 3),
+        businessProcesses: Object.keys(analysis.businessProcessRisks).length
+      });
+
       return analysis;
     } catch (err) {
-      console.error(err);
+      console.error('Analysis Error:', err);
       setError('Error processing CSV file. Please check the format.');
       return null;
     }
