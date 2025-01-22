@@ -1,295 +1,274 @@
-import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Alert, AlertTitle, AlertDescription } from './ui/alert';
-import { Upload, Download } from 'lucide-react';
-import { riskLevels } from '../data/roleDataset';
+import React, { useState, useEffect, useMemo } from "react";
+import { FileUpload } from "./FileUpload";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
-const RoleAnalytics = ({ dataset }) => {
-  const [analytics, setAnalytics] = useState(null);
-  const [error, setError] = useState(null);
+const RoleAnalytics = () => {
+  const [riskDataset, setRiskDataset] = useState(null);
+  const [inputFile, setInputFile] = useState(null);
+  const [analysisResults, setAnalysisResults] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedRole, setSelectedRole] = useState("all");
 
-  const calculateRiskScore = (risks) => {
-    const weights = { low: 1, medium: 2, high: 3, critical: 4 };
-    return risks.reduce((score, risk) => score + weights[risk.riskLevel], 0);
+  const handleRiskFileUpload = (data) => {
+    console.log('Setting risk dataset');
+    setRiskDataset(data);
   };
 
-  const analyzeRoles = (csvContent) => {
-    try {
-      console.log('Input CSV Content:', csvContent);
-      const rows = csvContent.split('\n').slice(1);
-      const analysis = {
-        roleRisks: {},
-        riskCounts: { low: 0, medium: 0, high: 0, critical: 0 },
-        businessProcessRisks: {},
-        topRiskyRoles: [],
-        totalRoles: 0,
-        atRiskRoles: 0
-      };
+  const handleInputFileUpload = (data) => {
+    console.log('Setting input file');
+    setInputFile(data);
+  };
 
-      rows.forEach(row => {
-        if (!row.trim()) return;
-        
-        const [role, inputAction] = row.split(',').map(field => field.trim());
-        console.log('Processing Role:', role, 'Action:', inputAction);
-        
-        analysis.totalRoles++;
-        const roleAnalysis = {
-          functions: [],
-          risks: [],
-          riskScore: 0,
-          businessProcesses: new Set(),
-          conflictingActions: []
-        };
+  useEffect(() => {
+    const hasRiskDataset = !!riskDataset?.length;
+    const hasInputFile = !!inputFile?.length;
+    
+    console.log('useEffect triggered', { hasRiskDataset, hasInputFile });
 
-        // Dataset columns: [RiskID, Description, RiskLevel, RiskType, FunctionID, FunctionDescription, BusinessProcess, Action]
-        Object.entries(dataset).forEach(([_, riskData]) => {
-          // Check if action matches
-          if (riskData.Action === inputAction) {
-            console.log('Match found:', {
-              role,
-              inputAction,
-              riskId: riskData.RiskID,
-              functionId: riskData.FunctionID,
-              riskLevel: riskData.RiskLevel,
-              businessProcess: riskData.BusinessProcess
-            });
+    if (hasRiskDataset && hasInputFile) {
+      console.log('Both files loaded, starting analysis');
+      console.log('Risk Dataset first row:', riskDataset[0]);
+      console.log('Input File first row:', inputFile[0]);
 
-            roleAnalysis.functions.push({
-              id: riskData.FunctionID,
-              description: riskData.FunctionDescription,
-              businessProcess: riskData.BusinessProcess,
-              action: riskData.Action
-            });
-
-            roleAnalysis.risks.push({
-              id: riskData.RiskID,
-              description: riskData.Description,
-              riskLevel: riskData.RiskLevel,
-              riskType: riskData.RiskType
-            });
-
-            roleAnalysis.businessProcesses.add(riskData.BusinessProcess);
-
-            // Update risk counts
-            analysis.riskCounts[riskData.RiskLevel.toLowerCase()]++;
-          }
-        });
-
-        // Calculate risk score after all matches are found
-        roleAnalysis.riskScore = calculateRiskScore(roleAnalysis.risks);
-
-        if (roleAnalysis.risks.length > 0) {
-          analysis.atRiskRoles++;
-        }
-
-        console.log('Role Analysis Result:', {
-          role,
-          riskScore: roleAnalysis.riskScore,
-          risksFound: roleAnalysis.risks.length,
-          businessProcesses: Array.from(roleAnalysis.businessProcesses),
-          functions: roleAnalysis.functions.length
-        });
-
-        analysis.roleRisks[role] = roleAnalysis;
-      });
-
-      // Sort and set top risky roles
-      analysis.topRiskyRoles = Object.entries(analysis.roleRisks)
-        .map(([role, data]) => ({
-          role,
-          riskScore: data.riskScore,
-          conflictCount: data.conflictingActions.length,
-          businessProcessCount: data.businessProcesses.size
-        }))
-        .sort((a, b) => b.riskScore - a.riskScore)
-        .slice(0, 10);
-
-      console.log('Final Analysis:', {
-        totalRoles: analysis.totalRoles,
-        atRiskRoles: analysis.atRiskRoles,
-        riskCounts: analysis.riskCounts,
-        topRiskyRoles: analysis.topRiskyRoles.slice(0, 3),
-        businessProcesses: Object.keys(analysis.businessProcessRisks).length
-      });
-
-      return analysis;
-    } catch (err) {
-      console.error('Analysis Error:', err);
-      setError('Error processing CSV file. Please check the format.');
-      return null;
+      const results = analyzeRisks(riskDataset, inputFile);
+      setAnalysisResults(results);
     }
-  };
+  }, [riskDataset, inputFile]);
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setError(null);
-        const text = e.target.result;
-        const results = analyzeRoles(text);
-        if (results) {
-          setAnalytics(results);
-        }
-      };
-      reader.onerror = () => {
-        setError('Error reading the file. Please try again.');
-      };
-      reader.readAsText(file);
-    }
-  };
-
-  const handleDownload = () => {
-    if (!analytics) return;
-
-    const report = {
-      timestamp: new Date().toISOString(),
-      summary: {
-        totalRoles: Object.keys(analytics.roleRisks).length,
-        totalConflicts: analytics.conflicts.length,
-        riskCounts: analytics.riskCounts,
-        businessProcessRisks: analytics.businessProcessRisks
-      },
-      detailedAnalysis: analytics.roleRisks,
-      conflicts: analytics.conflicts
+  const analyzeRisks = (riskData, roleData) => {
+    const DEBUG = false;
+    const debug = (...args) => {
+      if (DEBUG) console.log(...args);
     };
 
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'role-analysis-report.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Create hierarchical data structures
+    const riskToFunctions = new Map(); // Risk ID -> Set of Function IDs
+    const functionToActions = new Map(); // Function ID -> Set of Actions
+    const roleToActions = new Map(); // Role -> Set of Actions
+    const finalRisks = [];
+
+    // Step 1: Build Risk -> Function mappings (Column A -> Column E)
+    riskData.forEach(risk => {
+      if (risk['Risk ID'] && risk['Function ID']) {
+        if (!riskToFunctions.has(risk['Risk ID'])) {
+          riskToFunctions.set(risk['Risk ID'], {
+            functions: new Set(),
+            description: risk.Description || '',
+            riskLevel: risk['Risk Level'] || '',
+            riskType: risk['Risk Type'] || ''
+          });
+        }
+        riskToFunctions.get(risk['Risk ID']).functions.add(risk['Function ID']);
+      }
+    });
+
+    // Step 2: Build Function -> Action mappings (Column E -> Column H)
+    riskData.forEach(risk => {
+      if (risk['Function ID'] && risk.Action) {
+        if (!functionToActions.has(risk['Function ID'])) {
+          functionToActions.set(risk['Function ID'], {
+            actions: new Set(),
+            description: risk['Function Description'] || ''
+          });
+        }
+        functionToActions.get(risk['Function ID']).actions.add(risk.Action.toUpperCase());
+      }
+    });
+
+    // Step 3: Build Role -> Action mappings from input file
+    roleData.forEach(role => {
+      if (role['Final Placement'] && role.Action) {
+        if (!roleToActions.has(role['Final Placement'])) {
+          roleToActions.set(role['Final Placement'], new Set());
+        }
+        roleToActions.get(role['Final Placement']).add(role.Action.toUpperCase());
+      }
+    });
+
+    // Helper function to find matching actions between role and function
+    const getMatchingActions = (functionId, roleActions) => {
+      const functionInfo = functionToActions.get(functionId);
+      if (!functionInfo) return [];
+      
+      return Array.from(functionInfo.actions)
+        .filter(action => roleActions.has(action));
+    };
+
+    // Step 4: Analyze risks against roles
+    roleToActions.forEach((roleActions, roleName) => {
+      debug(`Analyzing role: ${roleName} with actions:`, Array.from(roleActions));
+
+      riskToFunctions.forEach((riskInfo, riskId) => {
+        // Check if role has ANY action for each required function
+        let hasAllFunctions = true;
+        const conflictingFunctions = [];
+        
+        for (const functionId of riskInfo.functions) {
+          const matchingActions = getMatchingActions(functionId, roleActions);
+          if (matchingActions.length === 0) {
+            hasAllFunctions = false;
+            break;
+          }
+          conflictingFunctions.push(`${functionId} (${matchingActions.join(', ')})`);
+        }
+
+        if (hasAllFunctions) {
+          debug(`Found risk ${riskId} for role ${roleName}`);
+          finalRisks.push({
+            riskId: riskId,
+            role: roleName,
+            description: riskInfo.description,
+            riskLevel: riskInfo.riskLevel,
+            riskType: riskInfo.riskType,
+            functions: conflictingFunctions.join(', ')
+          });
+        }
+      });
+    });
+
+    console.log(`Analysis complete. Found ${finalRisks.length} risks across ${roleToActions.size} roles.`);
+    console.log(`Analyzed ${riskToFunctions.size} unique risks.`);
+
+    return {
+      finalRisks,
+      roleAnalysis: roleToActions,
+      summary: {
+        uniqueRisks: riskToFunctions.size,
+        totalRisks: finalRisks.length,
+        totalRoles: roleToActions.size
+      }
+    };
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Role Analysis Dashboard</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+  const filteredRisks = useMemo(() => {
+    if (!analysisResults?.finalRisks) return [];
+    let risks = analysisResults.finalRisks;
+    if (selectedRole !== "all") {
+      risks = risks.filter(risk => risk.role === selectedRole);
+    }
+    return risks;
+  }, [analysisResults?.finalRisks, selectedRole]);
 
-        {!analytics ? (
-          <label className="flex flex-col items-center p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-            <Upload className="w-8 h-8 mb-2 text-gray-500" />
-            <span className="text-sm text-gray-500">Upload Role CSV file</span>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          </label>
-        ) : (
-          <div className="space-y-6">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold">Total Roles</h3>
-                  <p className="text-2xl">{analytics.totalRoles}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold">At-Risk Roles</h3>
-                  <p className="text-2xl">{analytics.atRiskRoles}</p>
-                  <p className="text-sm text-gray-500">
-                    ({((analytics.atRiskRoles / analytics.totalRoles) * 100).toFixed(1)}%)
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold">Critical Risk Roles</h3>
-                  <p className="text-2xl">{analytics.riskCounts.critical}</p>
-                </CardContent>
-              </Card>
+  const paginatedRisks = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    return filteredRisks.slice(start, end);
+  }, [filteredRisks, page, pageSize]);
+
+  const totalPages = Math.ceil(filteredRisks.length / pageSize);
+
+  return (
+    <div className="container mx-auto p-4">
+      <div className="grid gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <FileUpload
+            onFileUpload={handleRiskFileUpload}
+            label="Upload Risk Dataset"
+          />
+          <FileUpload
+            onFileUpload={handleInputFileUpload}
+            label="Upload Input File"
+          />
+        </div>
+
+        {analysisResults && (
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="mb-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold">Analysis Results</h2>
+              <Select
+                value={selectedRole}
+                onValueChange={(value) => {
+                  setSelectedRole(value);
+                  setPage(1); // Reset to first page when filter changes
+                }}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  {Array.from(analysisResults.roleAnalysis?.keys() || []).map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Top 10 Risky Roles */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Top 10 High-Risk Roles</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr>
-                        <th className="px-4 py-2">Role</th>
-                        <th className="px-4 py-2">Risk Score</th>
-                        <th className="px-4 py-2">Conflicts</th>
-                        <th className="px-4 py-2">Business Processes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {analytics.topRiskyRoles.map((role, index) => (
-                        <tr key={role.role} className={index % 2 ? 'bg-gray-50' : ''}>
-                          <td className="px-4 py-2">{role.role}</td>
-                          <td className="px-4 py-2">{role.riskScore}</td>
-                          <td className="px-4 py-2">{role.conflictCount}</td>
-                          <td className="px-4 py-2">{role.businessProcessCount}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse border">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border p-2 text-left">Risk ID</th>
+                    <th className="border p-2 text-left">Role</th>
+                    <th className="border p-2 text-left">Action</th>
+                    <th className="border p-2 text-left">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedRisks.map((risk, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="border p-2">{risk.riskId}</td>
+                      <td className="border p-2">{risk.role}</td>
+                      <td className="border p-2">{risk.functions}</td>
+                      <td className="border p-2">{risk.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-            {/* Business Process Risk Distribution */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Business Process Risk Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={Object.entries(analytics.businessProcessRisks).map(([process, data]) => ({
-                        name: process,
-                        ...data.byRiskLevel,
-                        total: data.total
-                      }))}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="critical" stackId="a" fill={riskLevels.critical.color} />
-                      <Bar dataKey="high" stackId="a" fill={riskLevels.high.color} />
-                      <Bar dataKey="medium" stackId="a" fill={riskLevels.medium.color} />
-                      <Bar dataKey="low" stackId="a" fill={riskLevels.low.color} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="mt-4 flex justify-between items-center">
+              <div className="text-sm text-gray-500">
+                Showing {paginatedRisks.length} of {filteredRisks.length} results
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-1">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
 
-            <div className="flex justify-end">
-              <button
-                onClick={handleDownload}
-                className="flex items-center bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                Download Detailed Report
-              </button>
+            <div className="mt-4 p-4 bg-gray-50 rounded">
+              <h3 className="font-bold text-lg mb-2">Analysis Summary</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Total Conflicts Found</p>
+                  <p className="text-2xl font-bold">{filteredRisks.length}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Roles Analyzed</p>
+                  <p className="text-2xl font-bold">{analysisResults.roleAnalysis?.size || 0}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
