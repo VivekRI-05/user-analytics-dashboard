@@ -6,6 +6,7 @@ import UserAnalyticsDashboard from './components/UserAnalyticsDashboard';
 import RoleAnalysisPage from './components/RoleAnalysisPage';
 import AdminConsole from './components/AdminConsole';
 import Dashboard from './components/Dashboard';
+import RoleAnalysis from './components/RoleAnalysis';
 
 const ProtectedRoute = ({ children, path }) => {
   console.log('ProtectedRoute rendering for path:', path);
@@ -69,11 +70,7 @@ function App() {
               <UserAnalyticsDashboard />
             </ProtectedRoute>
           } />
-          <Route path="/role-analysis" element={
-            <ProtectedRoute path="/role-analysis">
-              <RoleAnalysisPage />
-            </ProtectedRoute>
-          } />
+          <Route path="/role-analysis" element={<RoleAnalysis />} />
           <Route path="/combined-analysis" element={
             <ProtectedRoute path="/combined-analysis">
               <div className="p-4">Combined Analysis - Coming Soon</div>

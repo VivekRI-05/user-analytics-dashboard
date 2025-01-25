@@ -69,7 +69,7 @@ const Dashboard = () => {
             {permissions?.audit?.roleAnalysis && (
               <div className="p-4 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer"
                    onClick={() => window.location.href = '/role-analysis'}>
-                <h3 className="font-semibold mb-2">Role Analysis</h3>
+                <h3 className="font-semibold mb-2">Role Risk Analysis</h3>
                 <p className="text-sm text-gray-600">
                   Review and analyze role configurations
                 </p>
@@ -108,7 +108,7 @@ const Dashboard = () => {
                     User Analysis: {permissions?.audit?.userAnalysis ? '✅' : '❌'}
                   </li>
                   <li>
-                    Role Analysis: {permissions?.audit?.roleAnalysis ? '✅' : '❌'}
+                    Role Risk Analysis: {permissions?.audit?.roleAnalysis ? '✅' : '❌'}
                   </li>
                   <li>
                     Combined Analysis: {permissions?.audit?.combinedAnalysis ? '✅' : '❌'}

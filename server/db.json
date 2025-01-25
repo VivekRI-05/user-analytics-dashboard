@@ -1,0 +1,25 @@
+{
+  "users": [
+    {
+      "username": "Admin",
+      "password": "Admin",
+      "permissions": {
+        "audit": {
+          "enabled": true,
+          "userAnalysis": false,
+          "roleAnalysis": false,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "sorReview": false,
+        "superUserAccess": false,
+        "dashboard": true
+      },
+      "id": 1737825076686,
+      "createdAt": "2025-01-25T17:11:16.686Z"
+    }
+  ],
+  "roles": [],
+  "permissions": []
+}

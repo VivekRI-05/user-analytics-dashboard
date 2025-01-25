@@ -9,9 +9,8 @@ const Home = () => {
   const analysisButtons = [
     { title: 'User Analysis', path: '/user-analysis', color: 'bg-[#1B365D]' },
     { title: 'Role Risk Analysis', path: '/role-analysis', color: 'bg-[#3B5998]' },
-    { title: 'User and Role RiskAnalysis', path: '/combined-analysis', color: 'bg-[#5B7BA5]' },
-    { title: 'Recommendations', path: '/recommendations', color: 'bg-[#7B9CC2]' },
-    { title: 'Role Analysis', path: '/role-analysis', color: 'bg-[#3B5998]' }
+    { title: 'User and Role Analysis', path: '/combined-analysis', color: 'bg-[#5B7BA5]' },
+    { title: 'Recommendations', path: '/recommendations', color: 'bg-[#7B9CC2]' }
   ];
 
   const handleLogout = () => {

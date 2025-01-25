@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Switch } from './ui/switch';
 import { PlusCircle, Save, Trash2, Edit, X } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001';
+const API_URL = 'http://localhost:8001';
 
 const AdminConsole = () => {
   const [users, setUsers] = useState([]);
@@ -288,7 +288,7 @@ const AdminConsole = () => {
                   <th className="p-2">Password</th>
                   <th className="p-2">Audit</th>
                   <th className="p-2">User Analysis</th>
-                  <th className="p-2">Role RiskAnalysis</th>
+                  <th className="p-2">Role Analysis</th>
                   <th className="p-2">Combined Analysis</th>
                   <th className="p-2">Recommendations</th>
                   <th className="p-2">User Access Review</th>

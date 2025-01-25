@@ -150,7 +150,8 @@ server.post('/api/upload-dataset', jsonServer.bodyParser, (req, res) => {
 
 server.use(router);
 
-const port = 3001;
+const port = 8001;
 server.listen(port, () => {
   console.log(`JSON Server is running on port ${port}`);
 }); 
+

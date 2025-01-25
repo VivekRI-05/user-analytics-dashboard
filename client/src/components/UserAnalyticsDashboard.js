@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
-import { Alert, AlertTitle, AlertDescription } from './components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import { Upload, Users, Lock, Clock, ArrowLeft, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
@@ -161,7 +161,7 @@ const UserAnalyticsDashboard = () => {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/home')}
           className="flex items-center text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
@@ -181,7 +181,7 @@ const UserAnalyticsDashboard = () => {
       <div ref={dashboardRef}>
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">User Analytics Dashboard</CardTitle>
+            <CardTitle className="text-2xl font-bold">Rinexis Authorization Tool</CardTitle>
           </CardHeader>
           <CardContent>
             {error && (
@@ -191,18 +191,18 @@ const UserAnalyticsDashboard = () => {
               </Alert>
             )}
             
-            <label className="flex flex-col items-center p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-              <Upload className="w-8 h-8 mb-2 text-gray-500" />
-              <span className="text-sm text-gray-500">Upload CSV file</span>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
-
-            {analytics && (
+            {!analytics ? (
+              <label className="flex flex-col items-center p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+                <Upload className="w-8 h-8 mb-2 text-gray-500" />
+                <span className="text-sm text-gray-500">Upload CSV file</span>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                   <MetricCard 
@@ -327,4 +327,4 @@ const UserAnalyticsDashboard = () => {
   );
 };
 
-export default UserAnalyticsDashboard;
+export default UserAnalyticsDashboard; 

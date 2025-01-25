@@ -45,7 +45,7 @@ const Layout = ({ children }) => {
       label: 'Audit',
       submenu: [
         { id: 'user-analysis', label: 'User Analysis', path: '/user-analysis' },
-        { id: 'role-analysis', label: 'Role Analysis', path: '/role-analysis' },
+        { id: 'role-analysis', label: 'Role Risk Analysis', path: '/role-analysis' },
         { id: 'combined-analysis', label: 'User and Role Analysis', path: '/combined-analysis' },
         { id: 'recommendations', label: 'Recommendations', path: '/recommendations' }
       ]
