@@ -6,11 +6,40 @@ import rinexisLogo from '../images/rinexis-logo.png';
 const Home = () => {
   const navigate = useNavigate();
 
-  const analysisButtons = [
-    { title: 'User Analysis', path: '/user-analysis', color: 'bg-[#1B365D]' },
-    { title: 'Role Risk Analysis', path: '/role-analysis', color: 'bg-[#3B5998]' },
-    { title: 'User and Role Analysis', path: '/combined-analysis', color: 'bg-[#5B7BA5]' },
-    { title: 'Recommendations', path: '/recommendations', color: 'bg-[#7B9CC2]' }
+  const menuItems = [
+    {
+      title: 'Dashboard',
+      // ... other dashboard properties
+    },
+    {
+      title: 'Audit',
+      submenu: [
+        {
+          title: 'User Analysis',
+          // ... other properties
+        },
+        {
+          title: 'Role Risk Analysis',
+          path: '/components/RoleAnalytics',
+          icon: 'your-icon-class',
+          name: 'role-risk-analysis',
+          component: 'RoleAnalytics'
+        },
+        {
+          title: 'Role Authorization Review', // Added new submenu item
+          path: '/role-authorization-review'
+        },
+        {
+          title: 'User and Role Analysis',
+          // ... existing properties
+        },
+        {
+          title: 'Recommendations',
+          // ... existing properties
+        }
+      ]
+    },
+    // ... other menu items
   ];
 
   const handleLogout = () => {
@@ -38,15 +67,15 @@ const Home = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-          {analysisButtons.map((button) => (
+          {menuItems.map((item) => (
             <button
-              key={button.path}
-              onClick={() => navigate(button.path)}
-              className={`${button.color} hover:opacity-90 text-white p-8 rounded-lg shadow-lg 
+              key={item.title}
+              onClick={() => navigate(item.path)}
+              className={`${item.color} hover:opacity-90 text-white p-8 rounded-lg shadow-lg 
                         transition-transform transform hover:scale-105
                         border-2 border-white`}
             >
-              <h2 className="text-xl font-semibold">{button.title}</h2>
+              <h2 className="text-xl font-semibold">{item.title}</h2>
             </button>
           ))}
         </div>

@@ -31,23 +31,43 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Welcome to Rinexis Authorization Tool</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <p className="text-lg">
-                Logged in as: <span className="font-semibold">{userId}</span>
-              </p>
-              <p className="text-gray-600">
-                Role: <span className="capitalize">{userRole}</span>
-              </p>
-            </div>
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h1 className="text-2xl font-bold mb-4">Welcome to Rinexis Authorization Tool</h1>
+        
+        {/* User Info */}
+        <div className="mb-6">
+          <p className="text-lg">
+            Logged in as: <span className="font-semibold">{userId}</span>
+          </p>
+          <p className="text-gray-600">
+            Role: <span className="capitalize">{userRole}</span>
+          </p>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-600">Total Users</h3>
+            <p className="text-2xl font-bold">--</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-green-600">Active Roles</h3>
+            <p className="text-2xl font-bold">--</p>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-purple-600">Risk Alerts</h3>
+            <p className="text-2xl font-bold">--</p>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div>
+          <h2 className="text-xl font-semibold mb-3">Recent Activity</h2>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-gray-600">No recent activity to display</p>
+          </div>
+        </div>
+      </div>
 
       {/* Quick Actions Card */}
       <Card>

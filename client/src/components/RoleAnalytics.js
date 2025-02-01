@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from 'react-router-dom';
 import { FileUpload } from "./FileUpload";
 import {
   Select,
@@ -21,6 +22,7 @@ import {
 } from 'recharts';
 
 const RoleAnalytics = () => {
+  const navigate = useNavigate();
   const [riskDataset, setRiskDataset] = useState(null);
   const [inputFile, setInputFile] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
@@ -281,207 +283,233 @@ const RoleAnalytics = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <FileUpload
-            onFileUpload={handleRiskFileUpload}
-            label="Upload Risk Dataset"
-          />
-          <FileUpload
-            onFileUpload={handleInputFileUpload}
-            label="Upload Input File"
-          />
-        </div>
+    <div className="space-y-6">
+      {/* Header with Title and Back Button */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-[#1B365D]">Role Risk Analysis</h1>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          <svg 
+            className="w-5 h-5 mr-2" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+            />
+          </svg>
+          Back to Home
+        </button>
+      </div>
 
-        {analysisResults && (
-          <>
-            <div className="bg-white p-6 rounded-lg shadow mb-6">
-              <h2 className="text-xl font-bold mb-4">Risk Analytics Dashboard</h2>
-              
-              {/* Key Metrics */}
-              <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-blue-600">Total Risks</h3>
-                  <p className="text-2xl font-bold">{getDashboardMetrics(filteredRisks).summary.totalRisks}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-green-600">Business Processes</h3>
-                  <p className="text-2xl font-bold">{getDashboardMetrics(filteredRisks).summary.totalBusinessProcesses}</p>
-                </div>
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-purple-600">Total Functions</h3>
-                  <p className="text-2xl font-bold">{getDashboardMetrics(filteredRisks).summary.totalFunctions}</p>
-                </div>
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-orange-600">Affected Roles</h3>
-                  <p className="text-2xl font-bold">{getDashboardMetrics(filteredRisks).summary.totalRoles}</p>
-                </div>
-              </div>
+      <div className="container mx-auto p-4">
+        <div className="grid gap-4">
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <FileUpload
+              onFileUpload={handleRiskFileUpload}
+              label="Upload Risk Dataset"
+            />
+            <FileUpload
+              onFileUpload={handleInputFileUpload}
+              label="Upload Input File"
+            />
+          </div>
 
-              {/* Risk Distribution */}
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium mb-2">Risk Level Distribution</h3>
-                  <div className="flex items-center justify-between mb-4">
-                    {getDashboardMetrics(filteredRisks).byRiskLevel.map((level, index) => (
-                      <div key={index} className="text-center">
-                        <p className="text-lg font-bold">{level.percentage}%</p>
-                        <p className="text-sm text-gray-600">{level.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <PieChart width={300} height={200}>
-                    <Pie
-                      data={getDashboardMetrics(filteredRisks).byRiskLevel}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ name, percentage }) => `${name}: ${percentage}%`}
-                    >
-                      {getDashboardMetrics(filteredRisks).byRiskLevel.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={['#EF4444', '#F59E0B', '#10B981'][index % 3]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium mb-2">Top Affected Functions</h3>
-                  <BarChart
-                    width={300}
-                    height={200}
-                    data={getDashboardMetrics(filteredRisks).byFunction.slice(0, 5)}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#6366F1" />
-                  </BarChart>
-                </div>
-              </div>
-
-              {/* Key Insights */}
-              <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                <h3 className="text-sm font-medium mb-2">Key Insights</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Most Affected Role</p>
-                    <p className="text-lg font-bold">{getDashboardMetrics(filteredRisks).summary.highestRiskRole}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Most Affected Process</p>
-                    <p className="text-lg font-bold">{getDashboardMetrics(filteredRisks).summary.mostAffectedProcess}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="mb-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold">Role Risk Analysis</h2>
-                <Select
-                  value={selectedRole}
-                  onValueChange={(value) => {
-                    setSelectedRole(value);
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    {Array.from(analysisResults.roleAnalysis?.keys() || []).map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full border-collapse border">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="border p-2 text-left">Risk ID</th>
-                      <th className="border p-2 text-left">Risk Type</th>
-                      <th className="border p-2 text-left">Role</th>
-                      <th className="border p-2 text-left">Functions (Actions)</th>
-                      <th className="border p-2 text-left">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedRisks.map((risk, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="border p-2">{risk.riskId}</td>
-                        <td className="border p-2">{risk.riskType}</td>
-                        <td className="border p-2">{risk.role}</td>
-                        <td className="border p-2">{risk.functions}</td>
-                        <td className="border p-2">{risk.description}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-4 flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                  Showing {paginatedRisks.length} of {filteredRisks.length} results
-                </div>
+          {analysisResults && (
+            <>
+              <div className="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 className="text-xl font-bold mb-4">Risk Analytics Dashboard</h2>
                 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <span className="px-3 py-1">
-                    Page {page} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
+                {/* Key Metrics */}
+                <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-blue-600">Total Risks</h3>
+                    <p className="text-2xl font-bold">{getDashboardMetrics(filteredRisks).summary.totalRisks}</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-green-600">Business Processes</h3>
+                    <p className="text-2xl font-bold">{getDashboardMetrics(filteredRisks).summary.totalBusinessProcesses}</p>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-purple-600">Total Functions</h3>
+                    <p className="text-2xl font-bold">{getDashboardMetrics(filteredRisks).summary.totalFunctions}</p>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-orange-600">Affected Roles</h3>
+                    <p className="text-2xl font-bold">{getDashboardMetrics(filteredRisks).summary.totalRoles}</p>
+                  </div>
+                </div>
+
+                {/* Risk Distribution */}
+                <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium mb-2">Risk Level Distribution</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      {getDashboardMetrics(filteredRisks).byRiskLevel.map((level, index) => (
+                        <div key={index} className="text-center">
+                          <p className="text-lg font-bold">{level.percentage}%</p>
+                          <p className="text-sm text-gray-600">{level.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <PieChart width={300} height={200}>
+                      <Pie
+                        data={getDashboardMetrics(filteredRisks).byRiskLevel}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={({ name, percentage }) => `${name}: ${percentage}%`}
+                      >
+                        {getDashboardMetrics(filteredRisks).byRiskLevel.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={['#EF4444', '#F59E0B', '#10B981'][index % 3]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </div>
+
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium mb-2">Top Affected Functions</h3>
+                    <BarChart
+                      width={300}
+                      height={200}
+                      data={getDashboardMetrics(filteredRisks).byFunction.slice(0, 5)}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#6366F1" />
+                    </BarChart>
+                  </div>
+                </div>
+
+                {/* Key Insights */}
+                <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                  <h3 className="text-sm font-medium mb-2">Key Insights</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Most Affected Role</p>
+                      <p className="text-lg font-bold">{getDashboardMetrics(filteredRisks).summary.highestRiskRole}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Most Affected Process</p>
+                      <p className="text-lg font-bold">{getDashboardMetrics(filteredRisks).summary.mostAffectedProcess}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-4 p-4 bg-gray-50 rounded">
-                <h3 className="font-bold text-lg mb-2">Analysis Summary</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Risks Found</p>
-                    <p className="text-2xl font-bold">{filteredRisks.length}</p>
+              <div className="bg-white p-4 rounded-lg shadow">
+                <div className="mb-4 flex justify-between items-center">
+                  <h2 className="text-xl font-bold">Role Risk Analysis</h2>
+                  <Select
+                    value={selectedRole}
+                    onValueChange={(value) => {
+                      setSelectedRole(value);
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Filter by role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      {Array.from(analysisResults.roleAnalysis?.keys() || []).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-collapse border">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border p-2 text-left">Risk ID</th>
+                        <th className="border p-2 text-left">Risk Type</th>
+                        <th className="border p-2 text-left">Role</th>
+                        <th className="border p-2 text-left">Functions (Actions)</th>
+                        <th className="border p-2 text-left">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedRisks.map((risk, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="border p-2">{risk.riskId}</td>
+                          <td className="border p-2">{risk.riskType}</td>
+                          <td className="border p-2">{risk.role}</td>
+                          <td className="border p-2">{risk.functions}</td>
+                          <td className="border p-2">{risk.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4 flex justify-between items-center">
+                  <div className="text-sm text-gray-500">
+                    Showing {paginatedRisks.length} of {filteredRisks.length} results
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">SoD Risks</p>
-                    <p className="text-2xl font-bold">
-                      {filteredRisks.filter(r => r.riskType === 'Segregation of Duties').length}
-                    </p>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <span className="px-3 py-1">
+                      Page {page} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Critical Action Risks</p>
-                    <p className="text-2xl font-bold">
-                      {filteredRisks.filter(r => r.riskType === 'Critical Action').length}
-                    </p>
+                </div>
+
+                <div className="mt-4 p-4 bg-gray-50 rounded">
+                  <h3 className="font-bold text-lg mb-2">Analysis Summary</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Risks Found</p>
+                      <p className="text-2xl font-bold">{filteredRisks.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">SoD Risks</p>
+                      <p className="text-2xl font-bold">
+                        {filteredRisks.filter(r => r.riskType === 'Segregation of Duties').length}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Critical Action Risks</p>
+                      <p className="text-2xl font-bold">
+                        {filteredRisks.filter(r => r.riskType === 'Critical Action').length}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

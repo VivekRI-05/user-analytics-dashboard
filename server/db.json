@@ -18,6 +18,40 @@
       },
       "id": 1737825076686,
       "createdAt": "2025-01-25T17:11:16.686Z"
+    },
+    {
+      "username": "Admin",
+      "email": "Admin@rinexis.com",
+      "password": "Killer@1",
+      "role": "user",
+      "permissions": {
+        "userAnalysis": true,
+        "roleAnalysis": false,
+        "userRoleAnalysis": false,
+        "recommendations": false,
+        "userAccessReview": false,
+        "roleAuthReview": false,
+        "dashboard": true
+      },
+      "id": 1737825076687
+    },
+    {
+      "username": "Test",
+      "email": "test@rinexis.com",
+      "password": "Killer@1",
+      "role": "user",
+      "permissions": {
+        "audit": {
+          "enabled": true,
+          "userAnalysis": true,
+          "roleAnalysis": false,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "dashboard": true
+      },
+      "id": 1737825076688
     }
   ],
   "roles": [],

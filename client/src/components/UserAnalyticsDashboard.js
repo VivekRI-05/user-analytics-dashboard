@@ -158,31 +158,32 @@ const UserAnalyticsDashboard = () => {
   );
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-[#1B365D]">User Analysis</h1>
         <button
-          onClick={() => navigate('/home')}
-          className="flex items-center text-gray-600 hover:text-gray-900"
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          <ArrowLeft className="w-5 h-5 mr-2" />
+          <svg 
+            className="w-5 h-5 mr-2" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+            />
+          </svg>
           Back to Home
         </button>
-        {analytics && (
-          <button
-            onClick={handleDownload}
-            className="flex items-center bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            <Download className="w-5 h-5 mr-2" />
-            Download Dashboard
-          </button>
-        )}
       </div>
       
       <div ref={dashboardRef}>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Rinexis Authorization Tool</CardTitle>
-          </CardHeader>
           <CardContent>
             {error && (
               <Alert variant="destructive" className="mb-6">
@@ -203,7 +204,7 @@ const UserAnalyticsDashboard = () => {
                 />
               </label>
             ) : (
-              <>
+              <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                   <MetricCard 
                     title="Expired Users"
@@ -318,7 +319,7 @@ const UserAnalyticsDashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
-              </>
+              </div>
             )}
           </CardContent>
         </Card>

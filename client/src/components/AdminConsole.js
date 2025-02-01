@@ -4,10 +4,12 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
 import { PlusCircle, Save, Trash2, Edit, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://localhost:8001';
 
 const AdminConsole = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState(null);
@@ -15,6 +17,18 @@ const AdminConsole = () => {
     username: '',
     password: ''
   });
+
+  const defaultPermissions = {
+    audit: {
+      enabled: false,
+      userAnalysis: false,
+      roleAnalysis: false,
+      combinedAnalysis: false,
+      recommendations: false
+    },
+    userAccessReview: false,
+    dashboard: true
+  };
 
   // Fetch users on component mount
   useEffect(() => {
@@ -25,7 +39,9 @@ const AdminConsole = () => {
     try {
       const response = await fetch(`${API_URL}/users`);
       const data = await response.json();
-      setUsers(data);
+      // Ensure each user has the correct permission structure
+      const structuredUsers = data.map(user => ensurePermissionStructure(user));
+      setUsers(structuredUsers);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -35,75 +51,79 @@ const AdminConsole = () => {
 
   const [newUser, setNewUser] = useState({
     username: '',
+    email: '',
     password: '',
-    permissions: {
-      audit: {
-        enabled: true,
-        userAnalysis: false,
-        roleAnalysis: false,
-        combinedAnalysis: false,
-        recommendations: false,
-      },
-      userAccessReview: false,
-      sorReview: false,
-      superUserAccess: false,
-      dashboard: true,
-    }
+    role: 'user',
+    permissions: defaultPermissions
   });
 
-  const handleAddUser = async () => {
-    if (!newUser.username || !newUser.password) {
-      alert('Username and password are required');
-      return;
-    }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewUser(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-    // Case insensitive username check
-    if (users.some(user => user.username.toLowerCase() === newUser.username.toLowerCase())) {
-      alert('Username already exists');
-      return;
+  const handlePermissionToggle = (permission) => {
+    if (permission.includes('.')) {
+      // Handle nested permissions (audit.*)
+      const [category, specific] = permission.split('.');
+      setNewUser(prev => ({
+        ...prev,
+        permissions: {
+          ...prev.permissions,
+          [category]: {
+            ...prev.permissions[category],
+            [specific]: !prev.permissions[category][specific]
+          }
+        }
+      }));
+    } else {
+      // Handle top-level permissions
+      setNewUser(prev => ({
+        ...prev,
+        permissions: {
+          ...prev.permissions,
+          [permission]: !prev.permissions[permission]
+        }
+      }));
     }
+  };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const response = await fetch(`${API_URL}/users`, {
+      const userDataToSubmit = ensurePermissionStructure(newUser);
+      console.log('Attempting to create user:', userDataToSubmit);
+
+      const response = await fetch('http://localhost:8001/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          ...newUser,
-          id: Date.now(),
-          createdAt: new Date().toISOString()
-        }),
+        body: JSON.stringify(userDataToSubmit)
       });
 
-      if (!response.ok) throw new Error('Failed to create user');
-
-      const savedUser = await response.json();
-      setUsers(prevUsers => [...prevUsers, savedUser]);
-      
-      // Reset form
-      setNewUser({
-        username: '',
-        password: '',
-        permissions: {
-          audit: {
-            enabled: true,
-            userAnalysis: false,
-            roleAnalysis: false,
-            combinedAnalysis: false,
-            recommendations: false,
-          },
-          userAccessReview: false,
-          sorReview: false,
-          superUserAccess: false,
-          dashboard: true,
-        }
-      });
-
-      alert('User created successfully!');
+      if (response.ok) {
+        const createdUser = await response.json();
+        setUsers([...users, ensurePermissionStructure(createdUser)]);
+        setNewUser({
+          username: '',
+          email: '',
+          password: '',
+          role: 'user',
+          permissions: defaultPermissions
+        });
+        alert('User created successfully!');
+      } else {
+        const errorData = await response.text();
+        throw new Error(`Server error: ${errorData}`);
+      }
     } catch (error) {
-      console.error('Error creating user:', error);
-      alert('Failed to create user');
+      console.error('Detailed error:', error);
+      alert(`Error creating user: ${error.message}`);
     }
   };
 
@@ -247,38 +267,169 @@ const AdminConsole = () => {
     }
   };
 
+  const ensurePermissionStructure = (user) => {
+    return {
+      ...user,
+      permissions: {
+        audit: {
+          enabled: user.permissions?.audit?.enabled || false,
+          userAnalysis: user.permissions?.audit?.userAnalysis || false,
+          roleAnalysis: user.permissions?.audit?.roleAnalysis || false,
+          combinedAnalysis: user.permissions?.audit?.combinedAnalysis || false,
+          recommendations: user.permissions?.audit?.recommendations || false
+        },
+        userAccessReview: user.permissions?.userAccessReview || false,
+        dashboard: true
+      }
+    };
+  };
+
   return (
-    <div className="p-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-[#1B365D]">Administration</h1>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          <svg 
+            className="w-5 h-5 mr-2" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+            />
+          </svg>
+          Back to Home
+        </button>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-4">Create New User</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Username</label>
+            <input
+              type="text"
+              name="username"
+              value={newUser.username}
+              onChange={handleInputChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={newUser.email}
+              onChange={handleInputChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <input
+              type="password"
+              name="password"
+              value={newUser.password}
+              onChange={handleInputChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Role</label>
+            <select
+              name="role"
+              value={newUser.role}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Permissions</h3>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span>Audit Access</span>
+                <Switch
+                  checked={newUser.permissions.audit.enabled}
+                  onCheckedChange={(checked) => handlePermissionToggle('audit.enabled')}
+                />
+              </div>
+              
+              {/* Only show these if audit is enabled */}
+              {newUser.permissions.audit.enabled && (
+                <>
+                  <div className="flex items-center justify-between pl-4">
+                    <span>User Analysis</span>
+                    <Switch
+                      checked={newUser.permissions.audit.userAnalysis}
+                      onCheckedChange={(checked) => handlePermissionToggle('audit.userAnalysis')}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pl-4">
+                    <span>Role Analysis</span>
+                    <Switch
+                      checked={newUser.permissions.audit.roleAnalysis}
+                      onCheckedChange={(checked) => handlePermissionToggle('audit.roleAnalysis')}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pl-4">
+                    <span>Combined Analysis</span>
+                    <Switch
+                      checked={newUser.permissions.audit.combinedAnalysis}
+                      onCheckedChange={(checked) => handlePermissionToggle('audit.combinedAnalysis')}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pl-4">
+                    <span>Recommendations</span>
+                    <Switch
+                      checked={newUser.permissions.audit.recommendations}
+                      onCheckedChange={(checked) => handlePermissionToggle('audit.recommendations')}
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-center justify-between">
+                <span>User Access Review</span>
+                <Switch
+                  checked={newUser.permissions.userAccessReview}
+                  onCheckedChange={(checked) => handlePermissionToggle('userAccessReview')}
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Create User
+          </button>
+        </form>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">User Management</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Add New User Section */}
-          <div className="mb-8 p-4 border rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">Add New User</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <Input
-                placeholder="Username"
-                value={newUser.username}
-                onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-              />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-              />
-            </div>
-            <Button 
-              onClick={handleAddUser}
-              className="w-full bg-[#003366] hover:bg-[#002347]"
-            >
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Add User
-            </Button>
-          </div>
-
           {/* Users List */}
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -333,7 +484,7 @@ const AdminConsole = () => {
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.audit.enabled}
+                        checked={user.permissions?.audit?.enabled || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'audit.enabled', checked)
                         }
@@ -341,43 +492,43 @@ const AdminConsole = () => {
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.audit.userAnalysis}
+                        checked={user.permissions?.audit?.userAnalysis || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'audit.userAnalysis', checked)
                         }
-                        disabled={!user.permissions.audit.enabled}
+                        disabled={!user.permissions?.audit?.enabled}
                       />
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.audit.roleAnalysis}
+                        checked={user.permissions?.audit?.roleAnalysis || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'audit.roleAnalysis', checked)
                         }
-                        disabled={!user.permissions.audit.enabled}
+                        disabled={!user.permissions?.audit?.enabled}
                       />
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.audit.combinedAnalysis}
+                        checked={user.permissions?.audit?.combinedAnalysis || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'audit.combinedAnalysis', checked)
                         }
-                        disabled={!user.permissions.audit.enabled}
+                        disabled={!user.permissions?.audit?.enabled}
                       />
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.audit.recommendations}
+                        checked={user.permissions?.audit?.recommendations || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'audit.recommendations', checked)
                         }
-                        disabled={!user.permissions.audit.enabled}
+                        disabled={!user.permissions?.audit?.enabled}
                       />
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.userAccessReview}
+                        checked={user.permissions?.userAccessReview || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'userAccessReview', checked)
                         }
@@ -385,7 +536,7 @@ const AdminConsole = () => {
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.sorReview}
+                        checked={user.permissions?.sorReview || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'sorReview', checked)
                         }
@@ -393,7 +544,7 @@ const AdminConsole = () => {
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.superUserAccess}
+                        checked={user.permissions?.superUserAccess || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'superUserAccess', checked)
                         }
@@ -401,7 +552,7 @@ const AdminConsole = () => {
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions.dashboard}
+                        checked={user.permissions?.dashboard || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'dashboard', checked)
                         }
