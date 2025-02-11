@@ -1,105 +1,146 @@
-const jsonServer = require('json-server');
-const server = jsonServer.create();
-const router = jsonServer.router('db.json');
-const middlewares = jsonServer.defaults();
+const express = require('express');
+const { Sequelize } = require('sequelize');
+const cors = require('cors');
+const bcrypt = require('bcrypt');
+const config = require('./config/database').development;
 
-// Enable CORS
-server.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  next();
-});
+const app = express();
+const saltRounds = 10; // for bcrypt
 
-// Add logging middleware
-server.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
+// Initialize Sequelize with PostgreSQL
+const sequelize = new Sequelize(
+  config.database,
+  config.username,
+  config.password,
+  {
+    host: config.host,
+    port: config.port,
+    dialect: 'postgres',
+    logging: false // Set to true for SQL query logging
+  }
+);
 
-// Add error handling
-server.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: err.message });
-});
-
-server.use(middlewares);
-server.use(jsonServer.bodyParser);
-
-// Add custom routes for user management
-server.post('/users', (req, res, next) => {
-  try {
-    if (!req.body.username || !req.body.password) {
-      return res.status(400).json({ error: 'Username and password are required' });
+// Define User model
+const User = sequelize.define('User', {
+  username: {
+    type: Sequelize.STRING,
+    unique: true,
+    allowNull: false
+  },
+  email: {
+    type: Sequelize.STRING,
+    unique: true,
+    allowNull: false
+  },
+  password: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  role: {
+    type: Sequelize.STRING,
+    defaultValue: 'user'
+  },
+  permissions: {
+    type: Sequelize.JSONB,
+    defaultValue: {
+      audit: {
+        enabled: false,
+        userAnalysis: false,
+        roleAnalysis: false,
+        combinedAnalysis: false,
+        recommendations: false
+      },
+      userAccessReview: false,
+      dashboard: true
     }
-
-    // Ensure dashboard permission is enabled for new users
-    const userData = {
-      ...req.body,
-      permissions: {
-        ...req.body.permissions,
-        dashboard: true // Always set dashboard to true
-      }
-    };
-
-    // Modify the request body
-    req.body = userData;
-    next();
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
-// Add middleware to ensure dashboard access on user updates
-server.put('/users/:id', (req, res, next) => {
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Test database connection
+sequelize.authenticate()
+  .then(() => {
+    console.log('Database connection established successfully.');
+  })
+  .catch(err => {
+    console.error('Unable to connect to the database:', err);
+  });
+
+// Routes
+app.post('/users', async (req, res) => {
   try {
-    // Ensure dashboard permission remains enabled on updates
+    console.log('Received user data:', req.body);
+    
+    // Hash password before saving
+    const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
     const userData = {
       ...req.body,
-      permissions: {
-        ...req.body.permissions,
-        dashboard: true // Always keep dashboard enabled
-      }
+      password: hashedPassword
     };
+    
+    // Create user with hashed password
+    const user = await User.create(userData, { logging: console.log });
+    console.log('Created user in database:', user.toJSON());
+    
+    // Return user data without password
+    const userResponse = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      permissions: user.permissions
+    };
+    
+    res.status(201).json(userResponse);
+  } catch (error) {
+    console.error('Detailed error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    // Modify the request body
-    req.body = userData;
-    next();
+app.get('/users', async (req, res) => {
+  try {
+    const users = await User.findAll();
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    await user.update(req.body);
+    res.json(user);
   } catch (error) {
     console.error('Error updating user:', error);
-    res.status(500).json({ error: 'Failed to update user' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Initialize or update existing users
-const initializeUsers = async () => {
+app.delete('/users/:id', async (req, res) => {
   try {
-    const db = router.db; // Get the lowdb instance
-    const users = db.get('users').value();
-
-    // Update all existing users to have dashboard access
-    const updatedUsers = users.map(user => ({
-      ...user,
-      permissions: {
-        ...user.permissions,
-        dashboard: true
-      }
-    }));
-
-    // Write back to db.json
-    db.set('users', updatedUsers).write();
-    console.log('Successfully updated all users with dashboard access');
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    await user.destroy();
+    res.status(204).send();
   } catch (error) {
-    console.error('Error initializing users:', error);
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: error.message });
   }
-};
-
-// Call initialization when server starts
-initializeUsers();
+});
 
 // Add endpoint to upload role input file
-server.post('/api/upload-roles', jsonServer.bodyParser, (req, res) => {
+app.post('/api/upload-roles', express.json(), (req, res) => {
   try {
     const inputRoles = req.body;
     
@@ -124,7 +165,7 @@ server.post('/api/upload-roles', jsonServer.bodyParser, (req, res) => {
 });
 
 // Add endpoint to upload risk dataset
-server.post('/api/upload-dataset', jsonServer.bodyParser, (req, res) => {
+app.post('/api/upload-dataset', express.json(), (req, res) => {
   try {
     const riskDataset = req.body;
     
@@ -148,10 +189,108 @@ server.post('/api/upload-dataset', jsonServer.bodyParser, (req, res) => {
   }
 });
 
-server.use(router);
+// Update login route with detailed logging
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    console.log('Login attempt details:', {
+      attemptedUsername: username,
+      attemptedPassword: password
+    });
 
-const port = 8001;
-server.listen(port, () => {
-  console.log(`JSON Server is running on port ${port}`);
-}); 
+    // Find user by username
+    const user = await User.findOne({ 
+      where: { username: username }
+    });
+
+    console.log('Database lookup result:', {
+      userFound: !!user,
+      storedDetails: user ? {
+        username: user.username,
+        storedPassword: user.password,
+        role: user.role
+      } : null
+    });
+
+    if (!user) {
+      console.log('Login failed: User not found');
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid username or password' 
+      });
+    }
+
+    // Direct password comparison
+    const exactMatch = user.password === password;
+    console.log('Exact password match:', exactMatch);
+
+    // Bcrypt comparison
+    const bcryptMatch = await bcrypt.compare(password, user.password);
+    console.log('Bcrypt password match:', bcryptMatch);
+
+    if (!exactMatch && !bcryptMatch) {
+      console.log('Login failed: Password mismatch');
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid username or password' 
+      });
+    }
+
+    // Send user data (excluding password)
+    const userData = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      permissions: user.permissions
+    };
+
+    console.log('Login successful for user:', username);
+    res.json({ 
+      success: true, 
+      user: userData
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Add this route temporarily for debugging
+app.get('/debug-users', async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ['username', 'email', 'password', 'role', 'permissions']
+    });
+    console.log('All users in database:', users.map(u => u.toJSON()));
+    res.json(users);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Database connection and server start
+const port = process.env.PORT || 8001;
+
+async function startServer() {
+  try {
+    // Sync database WITHOUT force: true to preserve data
+    await sequelize.sync(); // Remove force: true
+    console.log('Database synced successfully');
+
+    // Start server
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
+}
+
+startServer(); 
 

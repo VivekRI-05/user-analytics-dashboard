@@ -40,35 +40,37 @@ const Login = () => {
 
     try {
       console.log('Attempting to log in with:', credentials.userId);
-      const response = await fetch(`${API_URL}/users`);
-      const users = await response.json();
-      console.log('Found users:', users);
       
-      // Case insensitive user search
-      const user = users.find(u => 
-        u.username.toLowerCase() === credentials.userId.toLowerCase() && 
-        u.password === credentials.password
-      );
+      // Send login request to the correct endpoint
+      const response = await fetch('http://localhost:8001/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: credentials.userId,
+          password: credentials.password
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Invalid credentials');
+      }
+
+      const data = await response.json();
       
-      if (user) {
-        console.log('User found:', user);
-        console.log('Setting permissions:', user.permissions);
-        
+      if (data.success) {
         localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userId', user.username); // Keep original casing for display
-        localStorage.setItem('userRole', 'user');
-        localStorage.setItem('userPermissions', JSON.stringify(user.permissions));
-        
-        console.log('Stored permissions:', localStorage.getItem('userPermissions'));
-        
+        localStorage.setItem('userId', data.user.username);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userPermissions', JSON.stringify(data.user.permissions));
         navigate('/dashboard');
       } else {
-        console.log('No matching user found');
         setError('Invalid credentials. Please try again.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('An error occurred during login. Please try again.');
+      setError('Invalid credentials. Please try again.');
     }
   };
 

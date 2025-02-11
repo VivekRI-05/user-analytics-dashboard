@@ -52,6 +52,78 @@
         "dashboard": true
       },
       "id": 1737825076688
+    },
+    {
+      "username": "Testdb",
+      "email": "testdb@email.com",
+      "password": "Killer@1",
+      "role": "user",
+      "permissions": {
+        "audit": {
+          "enabled": false,
+          "userAnalysis": false,
+          "roleAnalysis": false,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "dashboard": true
+      },
+      "id": 1737825076689
+    },
+    {
+      "username": "Testdb",
+      "email": "testdb@email.com",
+      "password": "Welcome@1",
+      "role": "user",
+      "permissions": {
+        "audit": {
+          "enabled": false,
+          "userAnalysis": false,
+          "roleAnalysis": false,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "dashboard": true
+      },
+      "id": 1737825076690
+    },
+    {
+      "username": "Db01",
+      "email": "db01@gmail.com",
+      "password": "Welcome@!",
+      "role": "user",
+      "permissions": {
+        "audit": {
+          "enabled": false,
+          "userAnalysis": false,
+          "roleAnalysis": false,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "dashboard": true
+      },
+      "id": 1737825076691
+    },
+    {
+      "username": "db01",
+      "email": "df@gmail.com",
+      "password": "Jkahd j",
+      "role": "user",
+      "permissions": {
+        "audit": {
+          "enabled": false,
+          "userAnalysis": false,
+          "roleAnalysis": false,
+          "combinedAnalysis": false,
+          "recommendations": false
+        },
+        "userAccessReview": false,
+        "dashboard": true
+      },
+      "id": 1737825076692
     }
   ],
   "roles": [],

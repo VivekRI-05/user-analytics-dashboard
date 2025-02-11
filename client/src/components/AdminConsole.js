@@ -23,8 +23,7 @@ const AdminConsole = () => {
       enabled: false,
       userAnalysis: false,
       roleAnalysis: false,
-      combinedAnalysis: false,
-      recommendations: false
+      combinedAnalysis: false
     },
     userAccessReview: false,
     dashboard: true
@@ -54,7 +53,18 @@ const AdminConsole = () => {
     email: '',
     password: '',
     role: 'user',
-    permissions: defaultPermissions
+    permissions: {
+      audit: {
+        enabled: false,
+        userAnalysis: false,
+        roleRiskAnalysis: false,
+        userRoleAnalysis: false,
+        roleAuthReview: false,
+        recommendations: false
+      },
+      userAccessReview: false,
+      dashboard: true
+    }
   });
 
   const handleInputChange = (e) => {
@@ -94,35 +104,64 @@ const AdminConsole = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const userDataToSubmit = ensurePermissionStructure(newUser);
-      console.log('Attempting to create user:', userDataToSubmit);
+      const userData = {
+        username: newUser.username,
+        email: newUser.email,
+        password: newUser.password,
+        role: newUser.role,
+        permissions: {
+          audit: {
+            enabled: false,
+            userAnalysis: false,
+            roleAnalysis: false,
+            combinedAnalysis: false
+          },
+          userAccessReview: false,
+          dashboard: true
+        }
+      };
+
+      console.log('Sending user data:', userData);
 
       const response = await fetch('http://localhost:8001/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
-        body: JSON.stringify(userDataToSubmit)
+        body: JSON.stringify(userData)
       });
+
+      console.log('Response status:', response.status); // Debug log
 
       if (response.ok) {
         const createdUser = await response.json();
-        setUsers([...users, ensurePermissionStructure(createdUser)]);
+        console.log('Server response:', createdUser); // Debug log
+        setUsers(prev => [...prev, createdUser]);
+        // Reset form
         setNewUser({
           username: '',
           email: '',
           password: '',
           role: 'user',
-          permissions: defaultPermissions
+          permissions: {
+            audit: {
+              enabled: false,
+              userAnalysis: false,
+              roleAnalysis: false,
+              combinedAnalysis: false
+            },
+            userAccessReview: false,
+            dashboard: true
+          }
         });
         alert('User created successfully!');
       } else {
-        const errorData = await response.text();
-        throw new Error(`Server error: ${errorData}`);
+        const errorData = await response.json();
+        console.error('Server error:', errorData); // Debug log
+        throw new Error(errorData.error || 'Failed to create user');
       }
     } catch (error) {
-      console.error('Detailed error:', error);
+      console.error('Error creating user:', error);
       alert(`Error creating user: ${error.message}`);
     }
   };
@@ -275,8 +314,7 @@ const AdminConsole = () => {
           enabled: user.permissions?.audit?.enabled || false,
           userAnalysis: user.permissions?.audit?.userAnalysis || false,
           roleAnalysis: user.permissions?.audit?.roleAnalysis || false,
-          combinedAnalysis: user.permissions?.audit?.combinedAnalysis || false,
-          recommendations: user.permissions?.audit?.recommendations || false
+          combinedAnalysis: user.permissions?.audit?.combinedAnalysis || false
         },
         userAccessReview: user.permissions?.userAccessReview || false,
         dashboard: true
@@ -364,47 +402,119 @@ const AdminConsole = () => {
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-2">Permissions</h3>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span>Audit Access</span>
-                <Switch
-                  checked={newUser.permissions.audit.enabled}
-                  onCheckedChange={(checked) => handlePermissionToggle('audit.enabled')}
-                />
+              <div className="permission-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={newUser.permissions.audit.enabled}
+                    onChange={(e) => setNewUser({
+                      ...newUser,
+                      permissions: {
+                        ...newUser.permissions,
+                        audit: {
+                          ...newUser.permissions.audit,
+                          enabled: e.target.checked
+                        }
+                      }
+                    })}
+                  />
+                  Audit
+                </label>
+                
+                {newUser.permissions.audit.enabled && (
+                  <div className="audit-sub-permissions">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={newUser.permissions.audit.userAnalysis}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          permissions: {
+                            ...newUser.permissions,
+                            audit: {
+                              ...newUser.permissions.audit,
+                              userAnalysis: e.target.checked
+                            }
+                          }
+                        })}
+                      />
+                      User Analysis
+                    </label>
+                    
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={newUser.permissions.audit.roleRiskAnalysis}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          permissions: {
+                            ...newUser.permissions,
+                            audit: {
+                              ...newUser.permissions.audit,
+                              roleRiskAnalysis: e.target.checked
+                            }
+                          }
+                        })}
+                      />
+                      Role Risk Analysis
+                    </label>
+                    
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={newUser.permissions.audit.userRoleAnalysis}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          permissions: {
+                            ...newUser.permissions,
+                            audit: {
+                              ...newUser.permissions.audit,
+                              userRoleAnalysis: e.target.checked
+                            }
+                          }
+                        })}
+                      />
+                      User and Role Analysis
+                    </label>
+
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={newUser.permissions.audit.roleAuthReview}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          permissions: {
+                            ...newUser.permissions,
+                            audit: {
+                              ...newUser.permissions.audit,
+                              roleAuthReview: e.target.checked
+                            }
+                          }
+                        })}
+                      />
+                      Role Authorization Review
+                    </label>
+
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={newUser.permissions.audit.recommendations}
+                        onChange={(e) => setNewUser({
+                          ...newUser,
+                          permissions: {
+                            ...newUser.permissions,
+                            audit: {
+                              ...newUser.permissions.audit,
+                              recommendations: e.target.checked
+                            }
+                          }
+                        })}
+                      />
+                      Recommendations
+                    </label>
+                  </div>
+                )}
               </div>
-              
-              {/* Only show these if audit is enabled */}
-              {newUser.permissions.audit.enabled && (
-                <>
-                  <div className="flex items-center justify-between pl-4">
-                    <span>User Analysis</span>
-                    <Switch
-                      checked={newUser.permissions.audit.userAnalysis}
-                      onCheckedChange={(checked) => handlePermissionToggle('audit.userAnalysis')}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between pl-4">
-                    <span>Role Analysis</span>
-                    <Switch
-                      checked={newUser.permissions.audit.roleAnalysis}
-                      onCheckedChange={(checked) => handlePermissionToggle('audit.roleAnalysis')}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between pl-4">
-                    <span>Combined Analysis</span>
-                    <Switch
-                      checked={newUser.permissions.audit.combinedAnalysis}
-                      onCheckedChange={(checked) => handlePermissionToggle('audit.combinedAnalysis')}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between pl-4">
-                    <span>Recommendations</span>
-                    <Switch
-                      checked={newUser.permissions.audit.recommendations}
-                      onCheckedChange={(checked) => handlePermissionToggle('audit.recommendations')}
-                    />
-                  </div>
-                </>
-              )}
 
               <div className="flex items-center justify-between">
                 <span>User Access Review</span>
@@ -436,16 +546,15 @@ const AdminConsole = () => {
               <thead>
                 <tr className="text-left bg-gray-50">
                   <th className="p-2">Username</th>
-                  <th className="p-2">Password</th>
+                  <th className="p-2">Email</th>
+                  <th className="p-2">Dashboard</th>
                   <th className="p-2">Audit</th>
                   <th className="p-2">User Analysis</th>
-                  <th className="p-2">Role Analysis</th>
-                  <th className="p-2">Combined Analysis</th>
+                  <th className="p-2">Role Risk Analysis</th>
+                  <th className="p-2">User and Role Analysis</th>
+                  <th className="p-2">Role Authorization Review</th>
                   <th className="p-2">Recommendations</th>
                   <th className="p-2">User Access Review</th>
-                  <th className="p-2">SOR Review</th>
-                  <th className="p-2">Super User Access</th>
-                  <th className="p-2">Dashboard</th>
                   <th className="p-2">Actions</th>
                 </tr>
               </thead>
@@ -469,18 +578,26 @@ const AdminConsole = () => {
                     <td className="p-2">
                       {editingUser?.id === user.id ? (
                         <Input
-                          type="password"
-                          placeholder="New password"
-                          value={editForm.password}
+                          type="email"
+                          placeholder="New email"
+                          value={editForm.email}
                           onChange={(e) => setEditForm({
                             ...editForm,
-                            password: e.target.value
+                            email: e.target.value
                           })}
                           className="w-full"
                         />
                       ) : (
-                        "••••••••"
+                        user.email
                       )}
+                    </td>
+                    <td className="p-2">
+                      <Switch
+                        checked={user.permissions?.dashboard || false}
+                        onCheckedChange={(checked) => 
+                          handlePermissionChange(user.id, 'dashboard', checked)
+                        }
+                      />
                     </td>
                     <td className="p-2">
                       <Switch
@@ -501,18 +618,27 @@ const AdminConsole = () => {
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions?.audit?.roleAnalysis || false}
+                        checked={user.permissions?.audit?.roleRiskAnalysis || false}
                         onCheckedChange={(checked) => 
-                          handlePermissionChange(user.id, 'audit.roleAnalysis', checked)
+                          handlePermissionChange(user.id, 'audit.roleRiskAnalysis', checked)
                         }
                         disabled={!user.permissions?.audit?.enabled}
                       />
                     </td>
                     <td className="p-2">
                       <Switch
-                        checked={user.permissions?.audit?.combinedAnalysis || false}
+                        checked={user.permissions?.audit?.userRoleAnalysis || false}
                         onCheckedChange={(checked) => 
-                          handlePermissionChange(user.id, 'audit.combinedAnalysis', checked)
+                          handlePermissionChange(user.id, 'audit.userRoleAnalysis', checked)
+                        }
+                        disabled={!user.permissions?.audit?.enabled}
+                      />
+                    </td>
+                    <td className="p-2">
+                      <Switch
+                        checked={user.permissions?.audit?.roleAuthReview || false}
+                        onCheckedChange={(checked) => 
+                          handlePermissionChange(user.id, 'audit.roleAuthReview', checked)
                         }
                         disabled={!user.permissions?.audit?.enabled}
                       />
@@ -531,30 +657,6 @@ const AdminConsole = () => {
                         checked={user.permissions?.userAccessReview || false}
                         onCheckedChange={(checked) => 
                           handlePermissionChange(user.id, 'userAccessReview', checked)
-                        }
-                      />
-                    </td>
-                    <td className="p-2">
-                      <Switch
-                        checked={user.permissions?.sorReview || false}
-                        onCheckedChange={(checked) => 
-                          handlePermissionChange(user.id, 'sorReview', checked)
-                        }
-                      />
-                    </td>
-                    <td className="p-2">
-                      <Switch
-                        checked={user.permissions?.superUserAccess || false}
-                        onCheckedChange={(checked) => 
-                          handlePermissionChange(user.id, 'superUserAccess', checked)
-                        }
-                      />
-                    </td>
-                    <td className="p-2">
-                      <Switch
-                        checked={user.permissions?.dashboard || false}
-                        onCheckedChange={(checked) => 
-                          handlePermissionChange(user.id, 'dashboard', checked)
                         }
                       />
                     </td>
